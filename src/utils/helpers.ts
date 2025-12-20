@@ -16,19 +16,17 @@ export function isValidShortcut(shortcut: string): boolean {
 
 export function sanitizeTokenKey(input: string): string {
   return input
-    .trim()                                    // Remove spaces
-    .replace(/[^a-zA-Z0-9-]/g, '')            // Allow dashes in token keys, remove spaces and special chars
-    .toLowerCase();                            // Enforce lowercase for case-insensitive matching
+    .trim() // Remove spaces
+    .replace(/[^a-zA-Z0-9-]/g, '') // Allow dashes in token keys, remove spaces and special chars
+    .toLowerCase(); // Enforce lowercase for case-insensitive matching
 }
 
 export function sanitizeTokenValue(input: string): string {
-  return input.trim();                        // Only trim token values, preserve all content
+  return input.trim(); // Only trim token values, preserve all content
 }
 
 export function sanitizeUserInput(input: string): string {
-  return input
-    .trim()
-    .replace(/\s+/g, ' ');                    // Normalize multiple spaces to single spaces for consistent parsing
+  return input.trim().replace(/\s+/g, ' '); // Normalize multiple spaces to single spaces for consistent parsing
 }
 
 export function sanitizeShortcut(input: string): string {
@@ -46,9 +44,9 @@ export function createValidationError(
 
 export function joinUrlParts(...parts: string[]): string {
   return parts
-    .filter(part => part && part.length > 0)    // Remove empty/undefined parts
+    .filter(part => part && part.length > 0) // Remove empty/undefined parts
     .map(part => part.replace(/^\/+|\/+$/g, '')) // Strip leading/trailing slashes to avoid double slashes
-    .join('/');                                  // Join with single slash
+    .join('/'); // Join with single slash
 }
 
 export function formatDescription(

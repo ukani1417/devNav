@@ -25,7 +25,7 @@ export const VALIDATION_ERRORS = {
 export const URL_PATTERNS = {
   HTTP_PROTOCOL: /^https?:\/\//,
   VALID_URL: /^https?:\/\/[^\s$.?#].[^\s]*$/i,
-  TOKEN_KEY_PATTERN: /^[a-zA-Z0-9-]+$/,      // Token keys: alphanumeric + dashes, no spaces
-  USER_INPUT_PATTERN: /^[a-zA-Z0-9-\s]+$/,   // User input: alphanumeric + dashes + spaces
-  SHORTCUT_PATTERN: /^[a-zA-Z0-9-]+$/,       // Legacy compatibility - same as TOKEN_KEY_PATTERN
+  TOKEN_KEY_PATTERN: /^[a-zA-Z0-9-]+$/, // Token keys: alphanumeric + dashes, no spaces
+  USER_INPUT_PATTERN: /^[a-zA-Z0-9-\s]+$/, // User input: alphanumeric + dashes + spaces
+  SHORTCUT_PATTERN: /^[a-zA-Z0-9-]+$/, // Legacy compatibility - same as TOKEN_KEY_PATTERN
 } as const;

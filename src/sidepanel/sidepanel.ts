@@ -84,32 +84,32 @@ class SidePanelManager {
     this.ui.addTokenBtn.addEventListener('click', () => this.showAddTokenForm());
     this.ui.saveTokenBtn.addEventListener('click', () => this.saveToken());
     this.ui.cancelTokenBtn.addEventListener('click', () => this.hideAddTokenForm());
-    
+
     // Input sanitization and validation
-    this.ui.tokenKeyInput.addEventListener('input', (e) => {
+    this.ui.tokenKeyInput.addEventListener('input', e => {
       const input = e.target as HTMLInputElement;
       input.value = sanitizeTokenKey(input.value);
       this.updateTokenExample();
     });
-    
-    this.ui.tokenValueInput.addEventListener('input', (e) => {
+
+    this.ui.tokenValueInput.addEventListener('input', e => {
       const input = e.target as HTMLInputElement;
       input.value = sanitizeTokenValue(input.value);
       this.updateTokenExample();
     });
-    
+
     this.ui.tokenTypeSelect.addEventListener('change', () => this.updateTokenExample());
 
     // Import/Export
     this.ui.exportBtn.addEventListener('click', () => this.exportConfig());
-    this.ui.importInput.addEventListener('change', (e) => this.importConfig(e));
+    this.ui.importInput.addEventListener('change', e => this.importConfig(e));
     this.ui.clearAllBtn.addEventListener('click', () => this.clearAllConfig());
 
     // Enter key support
-    this.ui.tokenKeyInput.addEventListener('keypress', (e) => {
+    this.ui.tokenKeyInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') this.saveToken();
     });
-    this.ui.tokenValueInput.addEventListener('keypress', (e) => {
+    this.ui.tokenValueInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') this.saveToken();
     });
   }
@@ -131,8 +131,9 @@ class SidePanelManager {
   private updateTokenExample(): void {
     const key = this.ui.tokenKeyInput.value || 'staging-server';
     const type = this.ui.tokenTypeSelect.value || 'base';
-    const value = this.ui.tokenValueInput.value || (type === 'base' ? 'https://staging-server.com' : 'api/v1');
-    
+    const value =
+      this.ui.tokenValueInput.value || (type === 'base' ? 'https://staging-server.com' : 'api/v1');
+
     this.ui.tokenExampleKey.textContent = key;
     this.ui.tokenExampleType.textContent = type;
     this.ui.tokenExampleValue.textContent = value;
@@ -151,7 +152,7 @@ class SidePanelManager {
     try {
       await this.storage.setToken(key, value, type);
       this.config = await this.storage.getConfig();
-      
+
       this.hideAddTokenForm();
       this.updateStats();
       this.renderTokens();
@@ -173,7 +174,7 @@ class SidePanelManager {
     try {
       await this.storage.removeToken(key);
       this.config = await this.storage.getConfig();
-      
+
       this.updateStats();
       this.renderTokens();
       this.showSuccess(`Token '${key}' deleted successfully`);
@@ -190,7 +191,7 @@ class SidePanelManager {
     }
 
     this.ui.tokensEmptyState.style.display = 'none';
-    
+
     // Clear existing items (except empty state)
     const existingItems = this.ui.tokensList.querySelectorAll('.shortcut-item');
     existingItems.forEach(item => item.remove());
@@ -220,13 +221,13 @@ class SidePanelManager {
       const configExport = await this.storage.exportConfig();
       const dataStr = JSON.stringify(configExport, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      
+
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `dev-navigator-config-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
-      
+
       URL.revokeObjectURL(url);
       this.showSuccess('Configuration exported successfully');
     } catch (error) {
@@ -238,20 +239,20 @@ class SidePanelManager {
   private async importConfig(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     if (!file) return;
 
     try {
       const text = await file.text();
       const importData = JSON.parse(text);
-      
+
       await this.storage.importConfig(importData);
       this.config = await this.storage.getConfig();
-      
+
       this.updateStats();
       this.renderTokens();
       this.showSuccess('Configuration imported successfully');
-      
+
       // Clear the file input
       input.value = '';
     } catch (error) {
@@ -269,7 +270,7 @@ class SidePanelManager {
     try {
       await this.storage.resetConfig();
       this.config = await this.storage.getConfig();
-      
+
       this.updateStats();
       this.renderTokens();
       this.showSuccess('All shortcuts cleared successfully');
@@ -282,10 +283,10 @@ class SidePanelManager {
   // UI Helpers
   private updateStats(): void {
     if (!this.config) return;
-    
+
     const totalTokens = Object.keys(this.config.tokens).length;
     const baseTokens = Object.values(this.config.tokens).filter(t => t.type === 'base').length;
-    
+
     this.ui.tokenCountEl.textContent = totalTokens.toString();
     this.ui.baseCountEl.textContent = baseTokens.toString();
   }
@@ -294,7 +295,7 @@ class SidePanelManager {
     this.ui.successMessageEl.textContent = message;
     this.ui.successMessageEl.style.display = 'block';
     this.ui.errorMessageEl.style.display = 'none';
-    
+
     setTimeout(() => {
       this.ui.successMessageEl.style.display = 'none';
     }, 3000);
