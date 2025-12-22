@@ -109,12 +109,11 @@ export class StorageManager implements IStorageManager {
   /**
    * Adds or updates a token
    * @param key - Token key
-   * @param value - Token value  
-   * @param type - Token type ('base' or 'path')
+   * @param value - Token value
    */
-  async setToken(key: string, value: string, type: 'base' | 'path'): Promise<void> {
+  async setToken(key: string, value: string): Promise<void> {
     const config = await this.getConfig();
-    config.tokens[key] = { type, value };
+    config.tokens[key] = { value };
     await this.saveConfig(config);
   }
 

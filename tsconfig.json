@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "module": "CommonJS",
-    "lib": ["ES2017", "DOM"],
+    "module": "ESNext",
+    "lib": ["ES2017", "DOM", "DOM.Iterable"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -11,11 +11,22 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "types": ["chrome", "jest"],
+    "types": ["chrome", "jest", "node"],
     "resolveJsonModule": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": false
+    "sourceMap": false,
+    // React-specific additions
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    // Path mapping for shadcn/ui
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests/**/*.test.ts"]

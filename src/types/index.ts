@@ -1,6 +1,5 @@
 // Core configuration interfaces
 export interface Token {
-  type: 'base' | 'path';
   value: string;
 }
 
@@ -21,7 +20,6 @@ export interface ParsedInput {
   tokens: Array<{
     key: string;
     value: string;
-    type: 'base' | 'path' | 'dynamic';
     isResolved: boolean;
   }>;
   isValid: boolean;
@@ -73,7 +71,6 @@ export interface DefaultConfig extends DevNavigatorConfig {
 export interface TokenFormData {
   key: string;
   value: string;
-  type: 'base' | 'path';
 }
 
 export interface ImportValidationResult {

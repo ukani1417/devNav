@@ -1,4 +1,10 @@
-import type { ConstructedUrl, DevNavigatorConfig, ParsedInput, ValidationError, Token } from '../types';
+import type {
+  ConstructedUrl,
+  DevNavigatorConfig,
+  ParsedInput,
+  ValidationError,
+  Token,
+} from '../types';
 import { VALIDATION_ERRORS } from '../utils/constants';
 import {
   createValidationError,
@@ -13,9 +19,9 @@ export class URLParser {
    */
   private normalizeInput(input: string): string {
     return input
-      .trim()                           // Remove leading/trailing spaces
-      .replace(/\s+/g, ' ')             // Collapse multiple spaces to single space
-      .replace(/^@/, '');               // Remove legacy @ prefix if present
+      .trim() // Remove leading/trailing spaces
+      .replace(/\s+/g, ' ') // Collapse multiple spaces to single space
+      .replace(/^@/, ''); // Remove legacy @ prefix if present
   }
 
   /**
@@ -46,7 +52,7 @@ export class URLParser {
 
     // Split into segments using spaces
     const segments = normalizedInput.split(' ').filter(segment => segment.length > 0);
-    
+
     if (segments.length === 0) {
       errors.push(
         createValidationError('input', 'Invalid input format', VALIDATION_ERRORS.INVALID_FORMAT)
@@ -64,14 +70,13 @@ export class URLParser {
     // where users can mix configured tokens with arbitrary path segments
     const tokens = segments.map(segment => {
       const configToken = config.tokens[segment];
-      
+
       if (configToken) {
         // Found in config - resolved token with configured value
         return {
           key: segment,
           value: configToken.value,
-          type: configToken.type,
-          isResolved: true
+          isResolved: true,
         };
       } else {
         // Not in config - dynamic segment (key becomes the URL segment)
@@ -79,21 +84,15 @@ export class URLParser {
         return {
           key: segment,
           value: segment, // For dynamic tokens, key and value are the same
-          type: 'dynamic' as const,
-          isResolved: false
+          isResolved: false,
         };
       }
     });
 
-    // Validate we have at least one base token
-    const hasBaseToken = tokens.some(token => token.type === 'base');
-    if (!hasBaseToken) {
+    // Validate we have at least one token
+    if (tokens.length === 0) {
       errors.push(
-        createValidationError(
-          'tokens',
-          'No base URL found. Input must contain at least one base token.',
-          VALIDATION_ERRORS.MISSING_BASE
-        )
+        createValidationError('tokens', 'No tokens found in input.', VALIDATION_ERRORS.MISSING_BASE)
       );
     }
 
@@ -121,37 +120,31 @@ export class URLParser {
       };
     }
 
-    // Find base token (first token with type 'base' and contains protocol)
-    // Note: Protocol check ensures we have a complete base URL, not just a domain
-    // Design choice: Use first match rather than preferring any specific order
-    const baseToken = parsed.tokens.find(token => 
-      token.type === 'base' && token.value.startsWith('http')
+    // Find first token that looks like a URL (has protocol)
+    const urlToken = parsed.tokens.find(
+      token => token.value.startsWith('http://') || token.value.startsWith('https://')
     );
-    
-    if (!baseToken) {
+
+    if (!urlToken) {
+      // If no URL found, try to construct from all tokens as path segments
+      const pathSegments = parsed.tokens.map(token => token.value);
+      const joinedPath = joinUrlParts(...pathSegments);
+
       return {
-        url: '',
-        description: 'No valid base URL found',
-        isValid: false,
-        content: parsed.originalInput,
+        url: joinedPath,
+        description: `Navigate to: ${parsed.tokens.map(token => token.key).join(' → ')}`,
+        isValid: true,
+        content: joinedPath,
       };
     }
 
-    // Build URL parts
-    const urlParts: string[] = [baseToken.value];
+    // Build URL parts starting with the URL token
+    const urlParts: string[] = [urlToken.value];
 
-    // Add all non-base tokens as path segments
-    // Semantic difference: path tokens use configured 'value', dynamic tokens use 'key'
-    // This allows: "api" (path) -> "/api/v1" vs "session123" (dynamic) -> "session123"
+    // Add all other tokens as path segments
     parsed.tokens.forEach(token => {
-      if (token !== baseToken) {
-        if (token.type === 'path') {
-          // Path tokens have their configured value (e.g., "api" -> "/api/v1")
-          urlParts.push(token.value);
-        } else if (token.type === 'dynamic') {
-          // Dynamic tokens use their key as the segment (e.g., "session123" -> "session123")
-          urlParts.push(token.key);
-        }
+      if (token !== urlToken) {
+        urlParts.push(token.value);
       }
     });
 
@@ -214,13 +207,12 @@ export class URLParser {
 
     // Split by spaces and validate each segment
     const segments = normalized.split(' ').filter(segment => segment.length > 0);
-    
+
     if (segments.length === 0) return false;
-    
+
     // All segments must be valid token keys (can contain alphanumeric and dashes, but no spaces)
-    return segments.every(segment => 
-      segment.length > 0 && 
-      /^[a-zA-Z0-9-]+$/.test(segment)  // Token keys can contain dashes but no spaces
+    return segments.every(
+      segment => segment.length > 0 && /^[a-zA-Z0-9-]+$/.test(segment) // Token keys can contain dashes but no spaces
     );
   }
 }
