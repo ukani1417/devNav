@@ -7,19 +7,46 @@ module.exports = (env, argv) => {
   return {
     entry: {
       background: './src/background.ts',
-      sidepanel: './src/sidepanel/sidepanel.ts',
+      sidepanel: './src/sidepanel/sidepanel.tsx', // Updated to .tsx
     },
     module: {
       rules: [
         {
-          test: /\.tsx?$/,
+          test: /\.(ts|tsx)$/,
           use: 'ts-loader',
           exclude: /node_modules/,
+        },
+        // CSS processing for Tailwind
+        {
+          test: /\.css$/i,
+          use: [
+            'style-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                importLoaders: 1,
+              }
+            },
+            {
+              loader: 'postcss-loader',
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    require('tailwindcss'),
+                    require('autoprefixer')
+                  ]
+                }
+              }
+            }
+          ],
         },
       ],
     },
     resolve: {
       extensions: ['.tsx', '.ts', '.js'],
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
     output: {
       filename: '[name].js',
@@ -39,7 +66,11 @@ module.exports = (env, argv) => {
       new CopyPlugin({
         patterns: [
           { from: 'manifest.json', to: 'manifest.json' },
-          { from: 'public', to: '.' },
+          { 
+            from: 'src/sidepanel/index.html', 
+            to: 'sidepanel.html' 
+          },
+          { from: 'public/icons', to: 'icons' },
         ],
       }),
     ],

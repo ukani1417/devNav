@@ -30,8 +30,6 @@ class DevNavigatorExtension {
 
       // Register custom search engine for better UX
       this.registerSearchEngine();
-
-      console.log('DevNav extension initialized');
     } catch (error) {
       console.error('Failed to initialize DevNav:', error);
     }
@@ -214,32 +212,25 @@ class DevNavigatorExtension {
 
     if (!this.config) return suggestions;
 
-    // Find if we have a base token and suggest path tokens
-    const hasBaseToken = parsed.tokens.some(token => token.type === 'base');
-    const pathTokens = Object.entries(this.config.tokens).filter(
-      ([_, token]) => token.type === 'path'
-    );
+    // Suggest any available tokens that could extend the current input
+    const availableTokens = Object.entries(this.config.tokens).slice(0, 3); // Limit to 3 suggestions
 
-    if (hasBaseToken && pathTokens.length > 0) {
-      const availablePaths = pathTokens.slice(0, 3); // Limit to 3 suggestions
+    availableTokens.forEach(([tokenKey, token]) => {
+      const suggestionText = `${text} ${tokenKey}`;
+      const testParsed = this.parser.parse(suggestionText, this.config!);
+      const testConstructed = this.parser.construct(testParsed, this.config!);
 
-      availablePaths.forEach(([pathKey, pathToken]) => {
-        const suggestionText = `${text} ${pathKey}`;
-        const testParsed = this.parser.parse(suggestionText, this.config!);
-        const testConstructed = this.parser.construct(testParsed, this.config!);
-
-        if (testConstructed.isValid) {
-          const content = this.validateSuggestionContent(
-            testConstructed.content || testConstructed.url,
-            suggestionText
-          );
-          suggestions.push({
-            content: content,
-            description: testConstructed.url,
-          });
-        }
-      });
-    }
+      if (testConstructed.isValid) {
+        const content = this.validateSuggestionContent(
+          testConstructed.content || testConstructed.url,
+          suggestionText
+        );
+        suggestions.push({
+          content: content,
+          description: testConstructed.url,
+        });
+      }
+    });
 
     return suggestions;
   }
@@ -259,7 +250,6 @@ class DevNavigatorExtension {
     // Note: Chrome doesn't provide an API to programmatically register search engines
     // Users need to manually add search engines through chrome://settings/searchEngines
     // The omnibox with > keyword will work without this
-    console.log('DevNav omnibox ready with > keyword');
   }
 
   /**
