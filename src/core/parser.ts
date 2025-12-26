@@ -2,16 +2,16 @@ import type {
   ConstructedUrl,
   DevNavigatorConfig,
   ParsedInput,
-  ValidationError,
   Token,
-} from '../types';
-import { VALIDATION_ERRORS } from '../utils/constants';
+  ValidationError
+} from '../types'
+import { VALIDATION_ERRORS } from '../utils/constants'
 import {
   createValidationError,
   formatDescription,
   isValidUrl,
-  joinUrlParts,
-} from '../utils/helpers';
+  joinUrlParts
+} from '../utils/helpers'
 
 export class URLParser {
   /**
@@ -21,7 +21,7 @@ export class URLParser {
     return input
       .trim() // Remove leading/trailing spaces
       .replace(/\s+/g, ' ') // Collapse multiple spaces to single space
-      .replace(/^@/, ''); // Remove legacy @ prefix if present
+      .replace(/^@/, '') // Remove legacy @ prefix if present
   }
 
   /**
@@ -31,77 +31,107 @@ export class URLParser {
    * @returns ParsedInput with token analysis and validation
    */
   parse(input: string, config: DevNavigatorConfig): ParsedInput {
-    const errors: ValidationError[] = [];
-    const originalInput = input.trim();
+    const errors: ValidationError[] = []
+    const originalInput = input.trim()
 
     // Early validation
     if (!originalInput) {
       errors.push(
-        createValidationError('input', 'Input cannot be empty', VALIDATION_ERRORS.EMPTY_INPUT)
-      );
+        createValidationError(
+          'input',
+          'Input cannot be empty',
+          VALIDATION_ERRORS.EMPTY_INPUT
+        )
+      )
       return {
         tokens: [],
         isValid: false,
         errors,
-        originalInput,
-      };
+        originalInput
+      }
     }
 
     // Normalize input - handle spaces and remove @ prefix
-    const normalizedInput = this.normalizeInput(originalInput);
+    const normalizedInput = this.normalizeInput(originalInput)
 
     // Split into segments using spaces
-    const segments = normalizedInput.split(' ').filter(segment => segment.length > 0);
+    const segments = normalizedInput
+      .split(' ')
+      .filter(segment => segment.length > 0)
 
     if (segments.length === 0) {
       errors.push(
-        createValidationError('input', 'Invalid input format', VALIDATION_ERRORS.INVALID_FORMAT)
-      );
+        createValidationError(
+          'input',
+          'Invalid input format',
+          VALIDATION_ERRORS.INVALID_FORMAT
+        )
+      )
       return {
         tokens: [],
         isValid: false,
         errors,
-        originalInput,
-      };
+        originalInput
+      }
     }
 
     // Resolve each segment to tokens
     // Design: We allow unresolved (dynamic) segments to enable flexible URL construction
     // where users can mix configured tokens with arbitrary path segments
     const tokens = segments.map(segment => {
-      const configToken = config.tokens[segment];
+      const configToken = config.tokens[segment]
 
       if (configToken) {
         // Found in config - resolved token with configured value
         return {
           key: segment,
           value: configToken.value,
-          isResolved: true,
-        };
+          isResolved: true
+        } as const
       } else {
-        // Not in config - dynamic segment (key becomes the URL segment)
-        // This enables patterns like "api session123 users" where "session123" is dynamic
+        // Not in config - dynamic segment
         return {
           key: segment,
-          value: segment, // For dynamic tokens, key and value are the same
-          isResolved: false,
-        };
+          value: segment,
+          isResolved: false
+        }
       }
-    });
+    })
 
-    // Validate we have at least one token
-    if (tokens.length === 0) {
+    // Validate that we have at least one token that looks like a base URL
+    if (tokens.length > 0) {
+      const hasBaseUrl = tokens.some(
+        token =>
+          token.isResolved &&
+          (token.value.startsWith('http://') ||
+            token.value.startsWith('https://'))
+      )
+
+      if (!hasBaseUrl) {
+        errors.push(
+          createValidationError(
+            'tokens',
+            'No base URL found in tokens.',
+            VALIDATION_ERRORS.MISSING_BASE
+          )
+        )
+      }
+    } else {
       errors.push(
-        createValidationError('tokens', 'No tokens found in input.', VALIDATION_ERRORS.MISSING_BASE)
-      );
+        createValidationError(
+          'tokens',
+          'No tokens found in input.',
+          VALIDATION_ERRORS.EMPTY_INPUT
+        )
+      )
     }
 
     return {
       tokens,
       isValid: errors.length === 0,
       errors,
-      originalInput,
-    };
+      originalInput
+    }
   }
 
   /**
@@ -112,44 +142,42 @@ export class URLParser {
    */
   construct(parsed: ParsedInput, _config: DevNavigatorConfig): ConstructedUrl {
     if (!parsed.isValid || parsed.tokens.length === 0) {
+      const errorMessage =
+        parsed.errors.map(e => e.message).join('; ') || 'Invalid input'
       return {
         url: '',
-        description: parsed.errors.map(e => e.message).join('; '),
+        description: errorMessage,
         isValid: false,
-        content: parsed.originalInput,
-      };
+        content: parsed.originalInput
+      }
     }
 
-    // Find first token that looks like a URL (has protocol)
-    const urlToken = parsed.tokens.find(
-      token => token.value.startsWith('http://') || token.value.startsWith('https://')
-    );
+    const baseToken = parsed.tokens.find(
+      token =>
+        token.value.startsWith('http://') || token.value.startsWith('https://')
+    )
 
-    if (!urlToken) {
-      // If no URL found, try to construct from all tokens as path segments
-      const pathSegments = parsed.tokens.map(token => token.value);
-      const joinedPath = joinUrlParts(...pathSegments);
-
+    if (!baseToken) {
       return {
-        url: joinedPath,
-        description: `Navigate to: ${parsed.tokens.map(token => token.key).join(' → ')}`,
-        isValid: true,
-        content: joinedPath,
-      };
+        url: '',
+        description: 'No base URL token found.',
+        isValid: false,
+        content: parsed.originalInput
+      }
     }
 
-    // Build URL parts starting with the URL token
-    const urlParts: string[] = [urlToken.value];
+    // Build URL parts starting with the base token
+    const urlParts: string[] = [baseToken.value]
 
     // Add all other tokens as path segments
     parsed.tokens.forEach(token => {
-      if (token !== urlToken) {
-        urlParts.push(token.value);
+      if (token !== baseToken) {
+        urlParts.push(token.value)
       }
-    });
+    })
 
     // Construct final URL
-    const finalUrl = this.buildFinalUrl(urlParts);
+    const finalUrl = this.buildFinalUrl(urlParts)
 
     // Validate constructed URL
     if (!isValidUrl(finalUrl)) {
@@ -157,20 +185,20 @@ export class URLParser {
         url: finalUrl,
         description: 'Invalid URL constructed',
         isValid: false,
-        content: parsed.originalInput,
-      };
+        content: parsed.originalInput
+      }
     }
 
     // Create description from token keys
-    const tokenKeys = parsed.tokens.map(token => token.key);
-    const description = `Navigate to: ${tokenKeys.join(' → ')}`;
+    const tokenKeys = parsed.tokens.map(token => token.key)
+    const description = `Navigate to: ${tokenKeys.join(' → ')}`
 
     return {
       url: finalUrl,
       description,
       isValid: true,
-      content: finalUrl,
-    };
+      content: finalUrl
+    }
   }
 
   /**
@@ -179,21 +207,21 @@ export class URLParser {
    * @returns Complete URL string
    */
   private buildFinalUrl(parts: string[]): string {
-    if (parts.length === 0) return '';
+    if (parts.length === 0) return ''
 
-    const [baseUrl, ...restParts] = parts;
+    const [baseUrl, ...restParts] = parts
 
     if (restParts.length === 0) {
-      return baseUrl;
+      return baseUrl
     }
 
     // Ensure base URL doesn't end with slash for consistent joining
-    const cleanBase = baseUrl.replace(/\/+$/, '');
+    const cleanBase = baseUrl.replace(/\/+$/, '')
 
-    // Join remaining parts
-    const pathPart = joinUrlParts(...restParts);
+    // Join remaining parts, ensuring they don't start with a slash
+    const pathPart = restParts.map(part => part.replace(/^\/+/, '')).join('/')
 
-    return pathPart ? `${cleanBase}/${pathPart}` : cleanBase;
+    return pathPart ? `${cleanBase}/${pathPart}` : cleanBase
   }
 
   /**
@@ -202,17 +230,17 @@ export class URLParser {
    * @returns boolean indicating if input format is potentially valid
    */
   isValidFormat(input: string): boolean {
-    const normalized = this.normalizeInput(input);
-    if (!normalized) return false;
+    const normalized = this.normalizeInput(input)
+    if (!normalized) return false
 
     // Split by spaces and validate each segment
-    const segments = normalized.split(' ').filter(segment => segment.length > 0);
+    const segments = normalized.split(' ').filter(segment => segment.length > 0)
 
-    if (segments.length === 0) return false;
+    if (segments.length === 0) return false
 
     // All segments must be valid token keys (can contain alphanumeric and dashes, but no spaces)
     return segments.every(
       segment => segment.length > 0 && /^[a-zA-Z0-9-]+$/.test(segment) // Token keys can contain dashes but no spaces
-    );
+    )
   }
 }

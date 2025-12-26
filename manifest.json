@@ -20,7 +20,7 @@
   },
 
   "side_panel": {
-    "default_path": "src/vanilla-panel/index.html"
+    "default_path": "src/sidepanel/index.html"
   },
 
   "icons": {

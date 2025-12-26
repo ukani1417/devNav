@@ -1,14 +1,14 @@
-import type { ConfigExport, DevNavigatorConfig } from '../types';
-import type { IStorageManager } from '../types/storage';
-import { DEFAULT_CONFIG, STORAGE_KEYS } from '../utils/constants';
-import { getCurrentTimestamp } from '../utils/helpers';
+import type { ConfigExport, DevNavigatorConfig } from '../types'
+import type { IStorageManager } from '../types/storage'
+import { DEFAULT_CONFIG, STORAGE_KEYS } from '../utils/constants'
+import { getCurrentTimestamp } from '../utils/helpers'
 
 export class StorageManager implements IStorageManager {
-  private storage: chrome.storage.StorageArea;
+  private storage: chrome.storage.StorageArea
 
   constructor() {
     // Use chrome.storage.sync for syncing across devices
-    this.storage = chrome.storage.sync;
+    this.storage = chrome.storage.sync
   }
 
   /**
@@ -17,8 +17,8 @@ export class StorageManager implements IStorageManager {
    */
   async getConfig(): Promise<DevNavigatorConfig> {
     try {
-      const result = await this.storage.get(STORAGE_KEYS.CONFIG);
-      const stored = result[STORAGE_KEYS.CONFIG];
+      const result = await this.storage.get(STORAGE_KEYS.CONFIG)
+      const stored = result[STORAGE_KEYS.CONFIG]
 
       if (stored && this.isValidConfig(stored)) {
         // Merge with defaults to ensure all properties exist - handles schema evolution
@@ -29,17 +29,17 @@ export class StorageManager implements IStorageManager {
           ...stored,
           settings: {
             ...DEFAULT_CONFIG.settings,
-            ...stored.settings,
-          },
-        };
+            ...stored.settings
+          }
+        }
       }
 
       // No valid config found, return and save defaults
-      await this.saveConfig(DEFAULT_CONFIG);
-      return DEFAULT_CONFIG;
+      await this.saveConfig(DEFAULT_CONFIG)
+      return DEFAULT_CONFIG
     } catch (error) {
-      console.error('Failed to get config from storage:', error);
-      return DEFAULT_CONFIG;
+      console.error('Failed to get config from storage:', error)
+      return DEFAULT_CONFIG
     }
   }
 
@@ -51,15 +51,15 @@ export class StorageManager implements IStorageManager {
     try {
       const configToSave = {
         ...config,
-        version: config.version || DEFAULT_CONFIG.version,
-      };
+        version: config.version || DEFAULT_CONFIG.version
+      }
 
       await this.storage.set({
-        [STORAGE_KEYS.CONFIG]: configToSave,
-      });
+        [STORAGE_KEYS.CONFIG]: configToSave
+      })
     } catch (error) {
-      console.error('Failed to save config to storage:', error);
-      throw new Error('Failed to save configuration');
+      console.error('Failed to save config to storage:', error)
+      throw new Error('Failed to save configuration')
     }
   }
 
@@ -68,15 +68,15 @@ export class StorageManager implements IStorageManager {
    * @returns Promise with exportable configuration
    */
   async exportConfig(): Promise<ConfigExport> {
-    const config = await this.getConfig();
+    const config = await this.getConfig()
 
     return {
       devNavigator: {
         version: config.version,
         exported: getCurrentTimestamp(),
-        tokens: { ...config.tokens },
-      },
-    };
+        tokens: { ...config.tokens }
+      }
+    }
   }
 
   /**
@@ -85,25 +85,25 @@ export class StorageManager implements IStorageManager {
    */
   async importConfig(exported: ConfigExport): Promise<void> {
     if (!this.isValidExport(exported)) {
-      throw new Error('Invalid configuration format');
+      throw new Error('Invalid configuration format')
     }
 
-    const currentConfig = await this.getConfig();
+    const currentConfig = await this.getConfig()
 
     const newConfig: DevNavigatorConfig = {
       ...currentConfig,
       tokens: { ...exported.devNavigator.tokens },
-      version: exported.devNavigator.version,
-    };
+      version: exported.devNavigator.version
+    }
 
-    await this.saveConfig(newConfig);
+    await this.saveConfig(newConfig)
   }
 
   /**
    * Resets configuration to defaults
    */
   async resetConfig(): Promise<void> {
-    await this.saveConfig(DEFAULT_CONFIG);
+    await this.saveConfig(DEFAULT_CONFIG)
   }
 
   /**
@@ -112,9 +112,9 @@ export class StorageManager implements IStorageManager {
    * @param value - Token value
    */
   async setToken(key: string, value: string): Promise<void> {
-    const config = await this.getConfig();
-    config.tokens[key] = { value };
-    await this.saveConfig(config);
+    const config = await this.getConfig()
+    config.tokens[key] = { value }
+    await this.saveConfig(config)
   }
 
   /**
@@ -122,19 +122,21 @@ export class StorageManager implements IStorageManager {
    * @param key - Token key to remove
    */
   async removeToken(key: string): Promise<void> {
-    const config = await this.getConfig();
-    delete config.tokens[key];
-    await this.saveConfig(config);
+    const config = await this.getConfig()
+    delete config.tokens[key]
+    await this.saveConfig(config)
   }
 
   /**
    * Updates extension settings
    * @param settings - New settings to apply
    */
-  async updateSettings(settings: Partial<DevNavigatorConfig['settings']>): Promise<void> {
-    const config = await this.getConfig();
-    config.settings = { ...config.settings, ...settings };
-    await this.saveConfig(config);
+  async updateSettings(
+    settings: Partial<DevNavigatorConfig['settings']>
+  ): Promise<void> {
+    const config = await this.getConfig()
+    config.settings = { ...config.settings, ...settings }
+    await this.saveConfig(config)
   }
 
   /**
@@ -149,7 +151,7 @@ export class StorageManager implements IStorageManager {
       typeof obj.tokens === 'object' &&
       typeof obj.settings === 'object' &&
       typeof obj.version === 'string'
-    );
+    )
   }
 
   /**
@@ -165,7 +167,7 @@ export class StorageManager implements IStorageManager {
       typeof obj.devNavigator === 'object' &&
       typeof obj.devNavigator.version === 'string' &&
       typeof obj.devNavigator.tokens === 'object'
-    );
+    )
   }
 
   /**
@@ -177,11 +179,11 @@ export class StorageManager implements IStorageManager {
     chrome.storage.onChanged.addListener((changes, areaName) => {
       // Only handle sync area changes to avoid local storage noise
       if (areaName === 'sync' && changes[STORAGE_KEYS.CONFIG]) {
-        const newValue = changes[STORAGE_KEYS.CONFIG].newValue;
+        const newValue = changes[STORAGE_KEYS.CONFIG].newValue
         if (newValue && this.isValidConfig(newValue)) {
-          callback(newValue);
+          callback(newValue)
         }
       }
-    });
+    })
   }
 }

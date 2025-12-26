@@ -6,7 +6,8 @@ module.exports = (env, argv) => {
 
   return {
     entry: {
-      background: './src/background.ts'
+      background: './src/background.ts',
+      'src/sidepanel/sidepanel': './src/sidepanel/sidepanel.ts'
     },
     module: {
       rules: [
@@ -43,8 +44,11 @@ module.exports = (env, argv) => {
         patterns: [
           { from: 'manifest.json', to: 'manifest.json' },
           {
-            from: 'src/vanilla-panel',
-            to: 'src/vanilla-panel'
+            from: 'src/sidepanel',
+            to: 'src/sidepanel',
+            globOptions: {
+              ignore: ['**/*.ts'] // Don't copy TS files, they'll be compiled
+            }
           },
           { from: 'public/icons', to: 'icons' }
         ]

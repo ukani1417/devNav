@@ -1,29 +1,22 @@
+import {
+  type DevNavigatorConfig,
+  DEFAULT_CONFIG,
+  STORAGE_KEYS
+} from '../types/storage'
+
 /* ========================================
  * 1. CORE MODULES & INITIALIZATION
  * ======================================== */
 
-// Constants and configuration
-const STORAGE_KEYS = {
-  CONFIG: 'dev_navigator_config'
-}
-
-const DEFAULT_CONFIG = {
-  tokens: {},
-  settings: {
-    trigger: '>',
-    defaultDisposition: 'currentTab',
-    showDescriptions: true
-  },
-  version: '1.0.0'
-}
-
 // Simple storage manager for vanilla JS
 class SimpleStorageManager {
+  private storage: typeof chrome.storage.sync
+
   constructor() {
     this.storage = chrome.storage.sync
   }
 
-  async getConfig() {
+  async getConfig(): Promise<DevNavigatorConfig> {
     try {
       const result = await this.storage.get(STORAGE_KEYS.CONFIG)
       const stored = result[STORAGE_KEYS.CONFIG]
@@ -47,7 +40,7 @@ class SimpleStorageManager {
     }
   }
 
-  async saveConfig(config) {
+  async saveConfig(config: DevNavigatorConfig): Promise<void> {
     try {
       const configToSave = {
         ...config,
@@ -63,7 +56,7 @@ class SimpleStorageManager {
     }
   }
 
-  isValidConfig(obj) {
+  isValidConfig(obj: any): obj is DevNavigatorConfig {
     return (
       obj &&
       typeof obj === 'object' &&
@@ -105,7 +98,7 @@ const xIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" vi
 </svg>`
 
 // Initialize storage manager
-let storageManager
+let storageManager: SimpleStorageManager
 let isInitialized = false
 
 /* ========================================
@@ -114,8 +107,8 @@ let isInitialized = false
 
 // Simple object-based state management
 const appState = {
-  config: null,
-  tokens: {},
+  config: null as DevNavigatorConfig | null,
+  tokens: {} as Record<string, { value: string }>,
   loading: true,
   formData: {
     key: '',
@@ -124,24 +117,24 @@ const appState = {
 }
 
 // State update helpers
-function updateState(updates) {
+function updateState(updates: Partial<typeof appState>) {
   Object.assign(appState, updates)
   renderUI()
 }
 
-function updateTokens(tokens) {
+function updateTokens(tokens: Record<string, { value: string }>) {
   appState.tokens = tokens
   renderUI()
 }
 
-function updateFormData(field, value) {
+function updateFormData(field: 'key' | 'value', value: string) {
   appState.formData[field] = value
 }
 
 function clearFormData() {
   appState.formData = { key: '', value: '' }
-  const keyInput = document.getElementById('token-key')
-  const valueInput = document.getElementById('token-value')
+  const keyInput = document.getElementById('token-key') as HTMLInputElement
+  const valueInput = document.getElementById('token-value') as HTMLInputElement
   if (keyInput) keyInput.value = ''
   if (valueInput) valueInput.value = ''
 }
@@ -165,7 +158,7 @@ function initializeTheme() {
 }
 
 // Update UI based on theme preference
-function updateThemeUI(isDark) {
+function updateThemeUI(isDark: boolean) {
   const root = document.documentElement
   if (isDark) {
     root.classList.add('dark')
@@ -179,8 +172,8 @@ function updateThemeUI(isDark) {
  * ======================================== */
 
 // Validate token input
-function validateTokenInput(key, value) {
-  const errors = []
+function validateTokenInput(key: string, value: string): string[] {
+  const errors: string[] = []
 
   // Validate key
   if (!key || key.trim() === '') {
@@ -200,7 +193,7 @@ function validateTokenInput(key, value) {
 }
 
 // Handle form submission
-async function handleFormSubmit(event) {
+async function handleFormSubmit(event: Event) {
   event.preventDefault()
 
   const key = appState.formData.key.trim()
@@ -216,7 +209,10 @@ async function handleFormSubmit(event) {
   try {
     // Add token to storage - maintain compatibility with original Token format
     const updatedTokens = { ...appState.tokens, [key]: { value: value } }
-    const updatedConfig = { ...appState.config, tokens: updatedTokens }
+    const updatedConfig = {
+      ...appState.config,
+      tokens: updatedTokens
+    } as DevNavigatorConfig
 
     await storageManager.saveConfig(updatedConfig)
     updateState({ config: updatedConfig, tokens: updatedTokens })
@@ -228,12 +224,12 @@ async function handleFormSubmit(event) {
 }
 
 // Handle input changes
-function handleKeyInput(event) {
-  updateFormData('key', event.target.value)
+function handleKeyInput(event: Event) {
+  updateFormData('key', (event.target as HTMLInputElement).value)
 }
 
-function handleValueInput(event) {
-  updateFormData('value', event.target.value)
+function handleValueInput(event: Event) {
+  updateFormData('value', (event.target as HTMLInputElement).value)
 }
 
 /* ========================================
@@ -274,7 +270,7 @@ function handleImportConfig() {
   input.accept = '.json'
 
   input.onchange = async event => {
-    const file = event.target.files[0]
+    const file = (event.target as HTMLInputElement).files?.[0]
     if (!file) return
 
     try {
@@ -324,12 +320,15 @@ async function handleClearAllData() {
  * ======================================== */
 
 // Delete a specific token
-async function handleDeleteToken(tokenKey) {
+async function handleDeleteToken(tokenKey: string) {
   try {
     const updatedTokens = { ...appState.tokens }
     delete updatedTokens[tokenKey]
 
-    const updatedConfig = { ...appState.config, tokens: updatedTokens }
+    const updatedConfig = {
+      ...appState.config,
+      tokens: updatedTokens
+    } as DevNavigatorConfig
     await storageManager.saveConfig(updatedConfig)
     updateState({ config: updatedConfig, tokens: updatedTokens })
   } catch (error) {
@@ -382,32 +381,39 @@ function renderTokenBadges() {
       ${badgesHtml}
     </div>
   `
-  
+
   // Re-attach event listeners for delete buttons after rendering
   attachTokenDeleteListeners()
 }
 
 // Helper function to attach delete button listeners
 function attachTokenDeleteListeners() {
-  const tokensContainer = document.getElementById('tokens-container')
+  const tokensContainer = document.getElementById(
+    'tokens-container'
+  ) as HTMLElement & {
+    _deleteHandler?: (event: MouseEvent) => void
+  }
   if (tokensContainer) {
     // Remove existing listeners to avoid duplicates
-    const existingHandler = tokensContainer._deleteHandler
-    if (existingHandler) {
-      tokensContainer.removeEventListener('click', existingHandler)
+    if (tokensContainer._deleteHandler) {
+      tokensContainer.removeEventListener(
+        'click',
+        tokensContainer._deleteHandler
+      )
     }
-    
+
     // Add new event listener
-    const deleteHandler = function(event) {
-      if (event.target.closest('.badge-delete')) {
-        const deleteBtn = event.target.closest('.badge-delete')
+    const deleteHandler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (target.closest('.badge-delete')) {
+        const deleteBtn = target.closest('.badge-delete') as HTMLElement
         const tokenKey = deleteBtn.getAttribute('data-token-key')
         if (tokenKey) {
           handleDeleteToken(tokenKey)
         }
       }
     }
-    
+
     tokensContainer.addEventListener('click', deleteHandler)
     tokensContainer._deleteHandler = deleteHandler
   }
@@ -491,6 +497,8 @@ function renderUI() {
 
   // Update loading state
   const root = document.getElementById('devnav-root')
+  if (!root) return
+
   if (appState.loading) {
     root.classList.add('loading')
   } else {
@@ -507,19 +515,19 @@ function attachEventListeners() {
   const exportBtn = document.getElementById('export-btn')
   const importBtn = document.getElementById('import-btn')
   const clearAllBtn = document.getElementById('clear-all-btn')
-  
+
   if (exportBtn) exportBtn.addEventListener('click', handleExportConfig)
   if (importBtn) importBtn.addEventListener('click', handleImportConfig)
   if (clearAllBtn) clearAllBtn.addEventListener('click', handleClearAllData)
-  
+
   // Form submission
   const tokenForm = document.getElementById('token-form')
   if (tokenForm) tokenForm.addEventListener('submit', handleFormSubmit)
-  
+
   // Input change handlers
   const keyInput = document.getElementById('token-key')
   const valueInput = document.getElementById('token-value')
-  
+
   if (keyInput) keyInput.addEventListener('input', handleKeyInput)
   if (valueInput) valueInput.addEventListener('input', handleValueInput)
 }
@@ -529,7 +537,7 @@ function attachEventListeners() {
  * ======================================== */
 
 // Global error handler
-function handleError(error, userMessage) {
+function handleError(error: any, userMessage: string) {
   console.error('DevNav Error:', error)
   if (userMessage) {
     alert('Error: ' + userMessage)
