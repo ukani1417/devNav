@@ -356,29 +356,42 @@ function renderTokenBadges() {
     return
   }
 
-  const badgesHtml = tokenKeys
+  const tableRowsHtml = tokenKeys
     .map(key => {
       const token = tokens[key]
       // Handle both old format (string) and new format ({ value: string })
       const value = typeof token === 'string' ? token : token.value
       const truncatedValue =
-        value.length > 30 ? value.substring(0, 30) + '...' : value
+        value.length > 50 ? value.substring(0, 50) + '...' : value
 
       return `
-      <div class="badge" title="${key}: ${value}">
-        <span class="badge-key">${key}</span>
-        <span class="badge-value">: ${truncatedValue}</span>
-        <button class="badge-delete" data-token-key="${key}" aria-label="Delete ${key}">
-          ${xIcon}
-        </button>
-      </div>
-    `
+        <tr>
+          <td class="token-key">${key}</td>
+          <td class="token-value" title="${value}">${truncatedValue}</td>
+          <td class="token-action">
+            <button class="badge-delete" data-token-key="${key}" aria-label="Delete ${key}">
+              ${xIcon}
+            </button>
+          </td>
+        </tr>
+      `
     })
     .join('')
 
   container.innerHTML = `
-    <div class="badges-container">
-      ${badgesHtml}
+    <div class="tokens-table-container">
+      <table class="tokens-table">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Value</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRowsHtml}
+        </tbody>
+      </table>
     </div>
   `
 
@@ -440,14 +453,14 @@ function createUIStructure() {
       <div class="card-content">
         <!-- Action buttons -->
         <div class="button-group">
-          <button class="btn btn-outline" id="export-btn">
-            ${downloadIcon} Export
+          <button class="btn btn-outline" id="export-btn" title="Export configuration">
+            ${uploadIcon}
           </button>
-          <button class="btn btn-outline" id="import-btn">
-            ${uploadIcon} Import
+          <button class="btn btn-outline" id="import-btn" title="Import configuration">
+            ${downloadIcon}
           </button>
-          <button class="btn btn-destructive" id="clear-all-btn">
-            ${trashIcon} Clear All
+          <button class="btn btn-destructive" id="clear-all-btn" title="Clear all data">
+            ${trashIcon}
           </button>
         </div>
 
@@ -475,8 +488,8 @@ function createUIStructure() {
               />
             </div>
             <div class="form-group">
-              <button type="submit" class="btn btn-primary" style="margin-top: 24px;">
-                ${plusIcon} Add
+              <button type="submit" class="btn btn-primary" style="margin-top: 24px;" title="Add shortcut">
+                ${plusIcon}
               </button>
             </div>
           </div>

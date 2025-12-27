@@ -338,6 +338,125 @@ body {
 }
 
 /* ========================================
+ * TABLE COMPONENTS
+ * ======================================== */
+.tokens-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: var(--spacing-md);
+  border: 1px solid var(--extension-border);
+  border-radius: var(--border-radius);
+}
+
+.tokens-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: var(--extension-bg);
+}
+
+.tokens-table thead {
+  background: var(--btn-secondary-bg);
+  border-bottom: 1px solid var(--extension-border);
+}
+
+.tokens-table th {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: 600;
+  color: var(--extension-text);
+  border-bottom: 1px solid var(--extension-border);
+  position: sticky;
+  top: 0;
+  background: var(--btn-secondary-bg);
+}
+
+.tokens-table tbody tr {
+  border-bottom: 1px solid var(--extension-border);
+  transition: background-color 0.2s ease;
+}
+
+.tokens-table tbody tr:hover {
+  background: var(--extension-hover);
+}
+
+.tokens-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.tokens-table td {
+  padding: var(--spacing-md);
+  color: var(--extension-text);
+  vertical-align: middle;
+}
+
+.token-key {
+  font-weight: 600;
+  color: var(--extension-accent);
+  width: 20%;
+  min-width: 100px;
+}
+
+.token-value {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  color: var(--extension-text);
+  opacity: 0.8;
+  width: 60%;
+  word-break: break-all;
+  overflow: hidden;
+}
+
+.token-action {
+  width: 20%;
+  text-align: center;
+  min-width: 60px;
+}
+
+.token-action .badge-delete {
+  background: transparent;
+  border: none;
+  color: var(--extension-text);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.token-action .badge-delete:hover {
+  background: var(--btn-destructive-bg);
+  color: white;
+  opacity: 1;
+}
+
+/* Responsive table */
+@media (max-width: 600px) {
+  .tokens-table-container {
+    font-size: 12px;
+  }
+
+  .tokens-table th,
+  .tokens-table td {
+    padding: var(--spacing-sm);
+  }
+
+  .token-value {
+    font-size: 11px;
+  }
+
+  .token-action .badge-delete {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* ========================================
  * EMPTY STATE
  * ======================================== */
 .empty-state {
