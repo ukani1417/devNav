@@ -1,4 +1,4 @@
-# Dev Navigator 🧭
+# Dev Navigator
 
 A Chrome extension for fast URL construction using shortcuts. Perfect for developers working across multiple environments and API endpoints.
 
