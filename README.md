@@ -4,49 +4,45 @@ A Chrome extension for fast URL construction using shortcuts. Perfect for develo
 
 ## Features
 
-- **Fast URL Construction**: Type `@base-dynamic-@path` to quickly build URLs
-- **Environment Shortcuts**: Configure base URLs for different environments (dev, staging, prod)
-- **Path Shortcuts**: Define common API endpoints and paths
-- **Dynamic Segments**: Support for dynamic content like session IDs or user IDs
-- **Chrome Native UI**: Options page styled to match Chrome's built-in settings
+- **Fast URL Construction**: Type space-separated shortcuts to quickly build URLs
+- **Environment Shortcuts**: Configure shortcuts for different environments (dev, staging, prod)
+- **Dynamic Segments**: Any unmatched tokens become URL path segments
+- **Side Panel UI**: Modern Chrome side panel with native styling and theme support
 - **Team Sharing**: Import/export configurations for team collaboration
-- **TypeScript**: Fully typed for robust development
+- **TypeScript**: Fully typed with comprehensive error handling
+- **Manifest V3**: Modern Chrome extension architecture with service workers
 
 ## Usage
 
 ### Basic Pattern
 ```
-@base-dynamic-@path
+> shortcut dynamic segments
 ```
 
 ### Examples
-- `@dev-@api` → `https://myapp.dev.com/api/v1`
-- `@prod-session123-@admin` → `https://myapp.com/session123/admin/dashboard`
-- `@staging-user456-@reports` → `https://myapp.staging.com/user456/reports`
+- `> dev api` → `https://myapp.dev.com/api`
+- `> prod session123 admin` → `https://myapp.com/session123/admin`
+- `> staging user456 reports` → `https://myapp.staging.com/user456/reports`
 
 ### Setup
 1. Install the extension
-2. Right-click extension icon → Options (or visit chrome://extensions)
-3. Configure your base URLs and path shortcuts
-4. Start typing `@` in the address bar
+2. Click the extension icon to open the side panel
+3. Configure your URL shortcuts
+4. Start typing `>` in the address bar followed by your shortcuts
 
 ## Configuration
 
-### Base URLs
-Map environment shortcuts to base URLs:
+### URL Shortcuts
+Map shortcuts directly to full URLs:
 - `dev` → `https://myapp.dev.com`
+- `api` → `https://myapp.dev.com/api/v1`
 - `staging` → `https://myapp.staging.com`
 - `prod` → `https://myapp.com`
 
-### Path Shortcuts
-Define common endpoints:
-- `api` → `/api/v1`
-- `admin` → `/admin/dashboard`
-- `reports` → `/reports/analytics`
-
 ### Dynamic Segments
-Any text between shortcuts becomes part of the URL:
-- `@dev-session123-@api` → `https://myapp.dev.com/session123/api/v1`
+Any unmatched tokens become URL path segments:
+- `> dev session123 api` → `https://myapp.dev.com/session123/api`
+- `> prod user456` → `https://myapp.com/user456`
 
 ## Development
 
@@ -67,20 +63,24 @@ npm run dev        # Build with watch mode
 npm run build      # Production build
 npm test          # Run tests
 npm run typecheck # TypeScript checking
+npm run lint      # Biome linting
+npm run format    # Biome formatting
+npm run check     # Biome check (lint + format)
 ```
 
 ### Project Structure
 ```
 src/
-├── types/           # TypeScript definitions
 ├── core/           # Core parsing and storage logic
-├── options/        # Options page
+├── sidepanel/      # Side panel UI (vanilla TypeScript)
+├── types/          # TypeScript definitions
 ├── utils/          # Helper functions
 └── background.ts   # Chrome extension service worker
 
 public/
-├── options.html    # Options page HTML
 └── icons/         # Extension icons
+
+tests/             # Jest test files
 ```
 
 ### Loading Development Version
@@ -92,23 +92,29 @@ public/
 
 ## Architecture
 
-### URL Parser
-- Parses input like `@base-dynamic-@path`
-- Validates shortcuts against configuration
-- Constructs final URLs with proper joining
-- Handles error cases gracefully
+### URL Parser (`src/core/parser.ts`)
+- Parses space-separated token input
+- Matches tokens against configured shortcuts
+- Constructs URLs with dynamic path segments
+- Comprehensive error handling and validation
 
-### Storage Manager
-- Uses Chrome Storage Sync API
-- Manages base URLs and path shortcuts
-- Handles import/export for team sharing
-- Provides type-safe configuration management
+### Storage Manager (`src/core/storage.ts`)
+- Chrome Storage Sync API integration
+- Flat shortcut-to-URL mapping
+- JSON import/export for team sharing
+- Type-safe configuration with full TypeScript coverage
+
+### Side Panel UI (`src/sidepanel/`)
+- Vanilla TypeScript implementation
+- Chrome-native styling with theme support
+- Real-time shortcut management
+- CSP-compliant design
 
 ### Chrome Integration
-- Omnibox API for address bar interaction
-- Real-time suggestion generation
+- Manifest V3 service worker (`src/background.ts`)
+- Omnibox API with `>` trigger keyword
+- Side panel API for modern UI
 - Multiple navigation options (current/new tab)
-- Native Chrome UI styling
 
 ## Testing
 
@@ -142,15 +148,13 @@ Tests cover:
 {
   "devNavigator": {
     "version": "1.0.0",
-    "baseUrls": {
+    "shortcuts": {
       "dev": "https://myapp.dev.company.com",
       "staging": "https://myapp.staging.company.com",
-      "prod": "https://myapp.company.com"
-    },
-    "paths": {
-      "api": "/api/v1",
-      "admin": "/admin",
-      "docs": "/documentation"
+      "prod": "https://myapp.company.com",
+      "api": "https://myapp.dev.company.com/api/v1",
+      "admin": "https://myapp.company.com/admin",
+      "docs": "https://myapp.company.com/documentation"
     }
   }
 }
